@@ -1,6 +1,11 @@
 """Gradio Interactive Web Application for Multi-Modal Vision Transformer."""
 
 import os
+import sys
+
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from typing import Tuple, List, Dict, Union, Optional
 from PIL import Image
 import numpy as np

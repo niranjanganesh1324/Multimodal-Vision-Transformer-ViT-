@@ -1,7 +1,12 @@
 """ONNX & TorchScript Exporter for Multi-Modal Vision Transformer."""
 
 import os
+import sys
 import argparse
+
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 import torch
 
 from models.multimodal_model import MultiModalViT

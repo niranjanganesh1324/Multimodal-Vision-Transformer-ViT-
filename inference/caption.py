@@ -1,5 +1,11 @@
 """Image Captioning generator supporting Beam Search, Top-k, Top-p, and Greedy decoding."""
 
+import os
+import sys
+
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from typing import List, Dict, Union, Optional
 from PIL import Image
 import torch

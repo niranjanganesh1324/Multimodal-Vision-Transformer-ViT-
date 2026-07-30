@@ -1,5 +1,11 @@
 """Cross-Modal Image-Text Retrieval engine backed by FAISS / PyTorch vector search."""
 
+import os
+import sys
+
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from typing import List, Dict, Union, Tuple, Optional
 from PIL import Image
 import numpy as np

@@ -1,8 +1,13 @@
 """Main Training CLI Script for Multi-Modal Vision Transformer."""
 
 import os
+import sys
 import argparse
 import yaml
+
+# Ensure project root is in Python path
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
 from torch.utils.data import DataLoader
 
 from models.multimodal_model import MultiModalViT
