@@ -1,0 +1,43 @@
+# Model Architecture Configuration
+
+vision_encoder:
+  model_name: "google/vit-base-patch16-224"  # Options: google/vit-base-patch16-224, facebook/dinov2-base, microsoft/swin-base-patch4-window7-224
+  image_size: 224
+  patch_size: 16
+  num_channels: 3
+  hidden_dim: 768
+  pretrained: true
+  freeze: false
+
+text_encoder:
+  model_name: "bert-base-uncased"  # Options: bert-base-uncased, roberta-base, distilbert-base-uncased
+  vocab_size: 30522
+  hidden_dim: 768
+  max_text_length: 64
+  pretrained: true
+  freeze: false
+
+cross_attention:
+  num_layers: 4
+  num_heads: 8
+  hidden_dim: 768
+  mlp_dim: 3072
+  dropout: 0.1
+  activation: "gelu"
+
+projection:
+  embed_dim: 512
+  projection_dim: 512
+  dropout: 0.1
+
+vqa:
+  num_classes: 3129  # Number of top VQA candidate answers
+
+decoding:
+  beam_size: 5
+  max_length: 30
+  min_length: 5
+  temperature: 0.7
+  top_k: 50
+  top_p: 0.9
+  repetition_penalty: 1.2
