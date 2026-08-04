@@ -28,13 +28,19 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run PyTest Unit Tests
+        env:
+          TOKENIZERS_PARALLELISM: "false"
         run: |
           pytest tests/ -v
 
       - name: Smoke Test Synthetic Training
+        env:
+          TOKENIZERS_PARALLELISM: "false"
         run: |
           python train.py --epochs 1 --batch_size 2 --synthetic
 
       - name: Smoke Test Model Export
+        env:
+          TOKENIZERS_PARALLELISM: "false"
         run: |
           python export.py --output_dir ./outputs/ci_exports

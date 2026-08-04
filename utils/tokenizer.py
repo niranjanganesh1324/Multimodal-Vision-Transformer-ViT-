@@ -2,7 +2,71 @@
 
 from typing import List, Dict, Union, Optional
 import torch
-from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
+from transformers import AutoTokenizer
+
+
+class SimpleFallbackTokenizer:
+    """Standalone fallback tokenizer when HuggingFace Hub is unreachable or offline."""
+
+    def __init__(self, vocab_size: int = 30522, max_length: int = 64) -> None:
+        self.vocab_size = vocab_size
+        self.max_length = max_length
+        self.pad_token_id = 0
+        self.cls_token_id = 101
+        self.sep_token_id = 102
+        self.unk_token_id = 100
+
+    def __len__(self) -> int:
+        return self.vocab_size
+
+    def __call__(
+        self,
+        text: Union[str, List[str]],
+        max_length: Optional[int] = None,
+        padding: str = "max_length",
+        truncation: bool = True,
+        return_tensors: Optional[str] = "pt",
+    ) -> Dict[str, Union[torch.Tensor, List[List[int]]]]:
+        if isinstance(text, str):
+            text = [text]
+
+        length = max_length or self.max_length
+        input_ids = []
+        attn_masks = []
+
+        for t in text:
+            words = t.lower().split()
+            ids = [self.cls_token_id] + [(abs(hash(w)) % (self.vocab_size - 200)) + 103 for w in words[: length - 2]] + [self.sep_token_id]
+            pad_len = length - len(ids)
+            if pad_len > 0:
+                mask = [1] * len(ids) + [0] * pad_len
+                ids = ids + [self.pad_token_id] * pad_len
+            else:
+                ids = ids[:length]
+                mask = [1] * length
+
+            input_ids.append(ids)
+            attn_masks.append(mask)
+
+        if return_tensors == "pt":
+            return {
+                "input_ids": torch.tensor(input_ids, dtype=torch.long),
+                "attention_mask": torch.tensor(attn_masks, dtype=torch.long),
+            }
+        return {"input_ids": input_ids, "attention_mask": attn_masks}
+
+    def decode(self, token_ids: Union[torch.Tensor, List[int]], skip_special_tokens: bool = True) -> str:
+        if isinstance(token_ids, torch.Tensor):
+            token_ids = token_ids.cpu().squeeze().tolist()
+        if isinstance(token_ids, int):
+            token_ids = [token_ids]
+        words = [f"word_{tid}" for tid in token_ids if tid not in (0, 101, 102)]
+        return " ".join(words) if words else "sample text caption"
+
+    def batch_decode(self, batch_token_ids: Union[torch.Tensor, List[List[int]]], skip_special_tokens: bool = True) -> List[str]:
+        if isinstance(batch_token_ids, torch.Tensor):
+            batch_token_ids = batch_token_ids.cpu().tolist()
+        return [self.decode(ids, skip_special_tokens) for ids in batch_token_ids]
 
 
 class MultiModalTokenizer:
@@ -15,68 +79,49 @@ class MultiModalTokenizer:
         padding: str = "max_length",
         truncation: bool = True,
     ) -> None:
-        """Initialize the tokenizer.
-
-        Args:
-            model_name: HuggingFace tokenizer model name or path.
-            max_length: Maximum sequence length.
-            padding: Padding strategy ('max_length', 'longest', or False).
-            truncation: Whether to truncate sequences exceeding max_length.
-        """
         self.model_name = model_name
         self.max_length = max_length
         self.padding = padding
         self.truncation = truncation
+        self.is_fallback = False
 
         try:
-            self.tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = AutoTokenizer.from_pretrained(
-                model_name
-            )
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         except Exception as e:
-            print(f"[Warning] Failed to load '{model_name}' tokenizer from HuggingFace ({e}). Falling back to bert-base-uncased.")
-            self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+            print(f"[Warning] Failed to load '{model_name}' tokenizer ({e}). Utilizing SimpleFallbackTokenizer.")
+            self.is_fallback = True
+            self.tokenizer = SimpleFallbackTokenizer(vocab_size=30522, max_length=max_length)
 
     @property
     def vocab_size(self) -> int:
-        """Return vocabulary size."""
         return len(self.tokenizer)
 
     @property
     def pad_token_id(self) -> int:
-        """Return padding token ID."""
-        return self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else 0
+        return self.tokenizer.pad_token_id if hasattr(self.tokenizer, "pad_token_id") and self.tokenizer.pad_token_id is not None else 0
 
     @property
     def cls_token_id(self) -> int:
-        """Return CLS / BOS token ID."""
-        return self.tokenizer.cls_token_id if self.tokenizer.cls_token_id is not None else 101
+        return self.tokenizer.cls_token_id if hasattr(self.tokenizer, "cls_token_id") and self.tokenizer.cls_token_id is not None else 101
 
     @property
     def sep_token_id(self) -> int:
-        """Return SEP / EOS token ID."""
-        return self.tokenizer.sep_token_id if self.tokenizer.sep_token_id is not None else 102
+        return self.tokenizer.sep_token_id if hasattr(self.tokenizer, "sep_token_id") and self.tokenizer.sep_token_id is not None else 102
 
     @property
     def unk_token_id(self) -> int:
-        """Return UNK token ID."""
-        return self.tokenizer.unk_token_id if self.tokenizer.unk_token_id is not None else 100
+        return self.tokenizer.unk_token_id if hasattr(self.tokenizer, "unk_token_id") and self.tokenizer.unk_token_id is not None else 100
 
     def encode(
         self,
         text: Union[str, List[str]],
         return_tensors: Optional[str] = "pt",
     ) -> Dict[str, torch.Tensor]:
-        """Tokenize text into input_ids and attention_mask tensors.
-
-        Args:
-            text: Input string or list of strings.
-            return_tensors: Format for returned tensors ('pt' for PyTorch).
-
-        Returns:
-            Dict containing 'input_ids' and 'attention_mask'.
-        """
         if isinstance(text, str):
             text = [text]
+
+        if self.is_fallback:
+            return self.tokenizer(text, max_length=self.max_length, return_tensors=return_tensors)
 
         encoded = self.tokenizer(
             text,
@@ -92,15 +137,9 @@ class MultiModalTokenizer:
         token_ids: Union[torch.Tensor, List[int]],
         skip_special_tokens: bool = True,
     ) -> str:
-        """Decode token IDs back into human readable text.
+        if self.is_fallback:
+            return self.tokenizer.decode(token_ids, skip_special_tokens=skip_special_tokens)
 
-        Args:
-            token_ids: Tensor or list of integer token IDs.
-            skip_special_tokens: Whether to omit [PAD], [CLS], [SEP], etc.
-
-        Returns:
-            Decoded text string.
-        """
         if isinstance(token_ids, torch.Tensor):
             token_ids = token_ids.cpu().squeeze().tolist()
         return self.tokenizer.decode(token_ids, skip_special_tokens=skip_special_tokens)
@@ -110,15 +149,9 @@ class MultiModalTokenizer:
         batch_token_ids: Union[torch.Tensor, List[List[int]]],
         skip_special_tokens: bool = True,
     ) -> List[str]:
-        """Decode a batch of token IDs into text strings.
+        if self.is_fallback:
+            return self.tokenizer.batch_decode(batch_token_ids, skip_special_tokens=skip_special_tokens)
 
-        Args:
-            batch_token_ids: Tensor of shape (B, S) or list of token lists.
-            skip_special_tokens: Whether to omit special tokens.
-
-        Returns:
-            List of decoded text strings.
-        """
         if isinstance(batch_token_ids, torch.Tensor):
             batch_token_ids = batch_token_ids.cpu().tolist()
         return self.tokenizer.batch_decode(batch_token_ids, skip_special_tokens=skip_special_tokens)
