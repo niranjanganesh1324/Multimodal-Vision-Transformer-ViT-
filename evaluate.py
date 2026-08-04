@@ -62,6 +62,7 @@ def main():
         num_heads=model_cfg["cross_attention"]["num_heads"],
         vocab_size=len(tokenizer),
         vqa_num_classes=model_cfg["vqa"]["num_classes"],
+        pretrained=not args.synthetic,
     )
 
     if args.checkpoint and os.path.exists(args.checkpoint):

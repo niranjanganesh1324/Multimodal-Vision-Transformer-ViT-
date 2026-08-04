@@ -103,6 +103,7 @@ def main():
         vqa_num_classes=model_cfg["vqa"]["num_classes"],
         dropout=model_cfg["cross_attention"]["dropout"],
         temperature=train_cfg["losses"]["temperature"],
+        pretrained=not args.synthetic,
     )
 
     # Initialize Trainer and start training

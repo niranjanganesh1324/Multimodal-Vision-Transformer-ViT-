@@ -79,20 +79,19 @@ class TextEncoder(nn.Module):
         self.hidden_dim = hidden_dim
         self.use_custom_fallback = False
 
-        try:
-            if pretrained:
-                self.backbone = AutoModel.from_pretrained(model_name)
-            else:
-                config = AutoConfig.from_pretrained(model_name)
-                self.backbone = AutoModel.from_config(config)
-
-            backbone_dim = self.backbone.config.hidden_size if hasattr(self.backbone.config, "hidden_size") else hidden_dim
-
-        except Exception as e:
-            print(f"[Warning] Could not load text encoder '{model_name}' ({e}). Utilizing standalone CustomTextTransformer.")
+        if not pretrained:
             self.use_custom_fallback = True
             self.backbone = CustomTextTransformer(vocab_size=vocab_size, hidden_dim=hidden_dim)
             backbone_dim = hidden_dim
+        else:
+            try:
+                self.backbone = AutoModel.from_pretrained(model_name)
+                backbone_dim = self.backbone.config.hidden_size if hasattr(self.backbone.config, "hidden_size") else hidden_dim
+            except Exception as e:
+                print(f"[Warning] Could not load text encoder '{model_name}' ({e}). Utilizing standalone CustomTextTransformer.")
+                self.use_custom_fallback = True
+                self.backbone = CustomTextTransformer(vocab_size=vocab_size, hidden_dim=hidden_dim)
+                backbone_dim = hidden_dim
 
         if backbone_dim != hidden_dim and not self.use_custom_fallback:
             self.proj = nn.Linear(backbone_dim, hidden_dim)

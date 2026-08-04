@@ -149,7 +149,7 @@ def run_explainability(image: Image.Image, query_text: str) -> Tuple[Image.Image
 
 
 # Build Custom Gradio UI
-with gr.Blocks(title="Multi-Modal Vision Transformer Demo", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="Multi-Modal Vision Transformer Demo") as demo:
     gr.Markdown(
         """
         # 🚀 Multi-Modal Vision Transformer (ViT) Demo
@@ -240,4 +240,4 @@ with gr.Blocks(title="Multi-Modal Vision Transformer Demo", theme=gr.themes.Soft
             )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, theme=gr.themes.Soft())

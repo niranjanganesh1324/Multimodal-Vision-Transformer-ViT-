@@ -27,6 +27,7 @@ class MultiModalViT(nn.Module):
         vqa_num_classes: int = 3129,
         dropout: float = 0.1,
         temperature: float = 0.07,
+        pretrained: bool = True,
     ) -> None:
         super().__init__()
         self.hidden_dim = hidden_dim
@@ -35,8 +36,8 @@ class MultiModalViT(nn.Module):
         self.temperature = nn.Parameter(torch.tensor(temperature))
 
         # Encoders
-        self.vision_encoder = VisionEncoder(model_name=vision_model_name, hidden_dim=hidden_dim)
-        self.text_encoder = TextEncoder(model_name=text_model_name, vocab_size=vocab_size, hidden_dim=hidden_dim)
+        self.vision_encoder = VisionEncoder(model_name=vision_model_name, hidden_dim=hidden_dim, pretrained=pretrained)
+        self.text_encoder = TextEncoder(model_name=text_model_name, vocab_size=vocab_size, hidden_dim=hidden_dim, pretrained=pretrained)
 
         # Contrastive Projection Heads (Normalized Joint Embedding Space)
         self.vision_proj = nn.Sequential(

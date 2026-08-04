@@ -34,7 +34,7 @@ def test_custom_text_transformer():
 
 def test_vision_encoder():
     x = torch.randn(2, 3, 224, 224)
-    encoder = VisionEncoder(model_name="google/vit-base-patch16-224", hidden_dim=512)
+    encoder = VisionEncoder(model_name="google/vit-base-patch16-224", hidden_dim=512, pretrained=False)
     out = encoder(x)
 
     assert out["cls_token"].shape == (2, 512)
@@ -44,7 +44,7 @@ def test_vision_encoder():
 def test_text_encoder():
     input_ids = torch.randint(0, 1000, (2, 16))
     attn_mask = torch.ones(2, 16)
-    encoder = TextEncoder(model_name="bert-base-uncased", hidden_dim=512)
+    encoder = TextEncoder(model_name="bert-base-uncased", hidden_dim=512, pretrained=False)
     out = encoder(input_ids, attention_mask=attn_mask)
 
     assert out["cls_token"].shape == (2, 512)
@@ -75,6 +75,7 @@ def test_multimodal_vit_forward():
         num_heads=4,
         vocab_size=1000,
         vqa_num_classes=50,
+        pretrained=False,
     )
 
     outputs = model(pixel_values, input_ids, attention_mask=attn_mask, task="multitask")

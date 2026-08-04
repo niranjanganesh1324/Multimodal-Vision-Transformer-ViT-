@@ -83,24 +83,22 @@ class VisionEncoder(nn.Module):
         self.hidden_dim = hidden_dim
         self.use_custom_fallback = False
 
-        try:
-            if pretrained:
-                self.backbone = AutoModel.from_pretrained(model_name)
-            else:
-                config = AutoConfig.from_pretrained(model_name)
-                self.backbone = AutoModel.from_config(config)
-
-            # Get backbone hidden size
-            if hasattr(self.backbone.config, "hidden_size"):
-                backbone_dim = self.backbone.config.hidden_size
-            else:
-                backbone_dim = hidden_dim
-
-        except Exception as e:
-            print(f"[Warning] Could not load vision encoder checkpoint '{model_name}' ({e}). Utilizing standalone CustomViTBackbone.")
+        if not pretrained:
             self.use_custom_fallback = True
             self.backbone = CustomViTBackbone(hidden_dim=hidden_dim)
             backbone_dim = hidden_dim
+        else:
+            try:
+                self.backbone = AutoModel.from_pretrained(model_name)
+                if hasattr(self.backbone.config, "hidden_size"):
+                    backbone_dim = self.backbone.config.hidden_size
+                else:
+                    backbone_dim = hidden_dim
+            except Exception as e:
+                print(f"[Warning] Could not load vision encoder checkpoint '{model_name}' ({e}). Utilizing standalone CustomViTBackbone.")
+                self.use_custom_fallback = True
+                self.backbone = CustomViTBackbone(hidden_dim=hidden_dim)
+                backbone_dim = hidden_dim
 
         # Projection layer to match target hidden_dim if backbone dimension differs
         if backbone_dim != hidden_dim and not self.use_custom_fallback:

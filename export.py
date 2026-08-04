@@ -40,7 +40,7 @@ def export_models(output_dir: str = "./outputs/exported_models"):
     os.makedirs(output_dir, exist_ok=True)
     print(f"[Export] Initializing MultiModalViT model for export...")
 
-    model = MultiModalViT(hidden_dim=256, projection_dim=128, num_fusion_layers=2, num_heads=4)
+    model = MultiModalViT(hidden_dim=256, projection_dim=128, num_fusion_layers=2, num_heads=4, pretrained=False)
     model.eval()
 
     # Dummy Inputs

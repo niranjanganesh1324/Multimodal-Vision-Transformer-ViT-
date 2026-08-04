@@ -22,6 +22,7 @@ def dummy_setup():
         num_heads=4,
         vocab_size=len(tokenizer),
         vqa_num_classes=10,
+        pretrained=False,
     )
     img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
     return model, tokenizer, img
