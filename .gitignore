@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+venv/
+env/
+ENV/
+
+# Output directories & Checkpoints
+checkpoints/
+outputs/
+data/
+*.pt
+*.pth
+*.onnx
+*.bin
+
+# Log files
+*.log
+logs/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
